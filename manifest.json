@@ -1,0 +1,26 @@
+{
+	"manifest_version": 2,
+	"name": "Media Request",
+	"version": "1.0",
+
+	"description": "List of media requests",
+
+	"icons": {
+		"48": "icon-48.png"
+	},
+
+	"permissions": [
+		"tabs", 
+		"webRequest", 
+		"<all_urls>"
+	],
+
+	"browser_action": {
+		"default_title": "Media Request",
+		"default_popup": "popup.html"
+	},
+
+	"background": {
+		"scripts": ["constant.js", "background.js"]
+	}
+}

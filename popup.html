@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="choose_beast.css" />
+    <style>
+td {
+  max-width: 20em;
+  overflow: hidden;
+  white-space: nowrap; /* Don't forget this one */
+  text-overflow: ellipsis;
+}
+    </style>
+  </head>
+
+  <body>
+    <button type="button" id="btn-export">Export</button>
+    <button type="button" id="btn-clear">Clear</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Titles</th>
+        </tr>  
+      </thead>
+      <tbody id="tbody-id">
+      </tbody>
+    </table>
+    <script src="constant.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
+
