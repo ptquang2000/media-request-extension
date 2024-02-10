@@ -24,8 +24,9 @@ runtime.sendMessage(GET_MEDIA_TITLES).then(serializedMediaUrls =>
 const GenerateAria2Input = () => {
 	let output = "";
 	mediaUrls.forEach(mediaUrl => {
-		output += `${mediaUrl.url.substring(0, 255)}\n`;
-		output += `\tout="${mediaUrl.title}"\n`;
+		fileName = mediaUrl.title.replace(/[/\0]/g, '').substring(0, 200);
+		output += `${mediaUrl.url}\n`;
+		output += `\tout=${fileName}.mp4\n`;
 		output += `\tmax-connection-per-server=5\n`;
 	});
 	return output;
