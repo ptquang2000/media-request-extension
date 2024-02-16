@@ -2,21 +2,39 @@ const webRequest = browser.webRequest;
 const browserAction = browser.browserAction;
 const mediaUrls = [];
 
-const ProcessMediaUrl = (title, url) => {
-	console.log(`Title: ${title} - URL: ${url}`);
+function formatBytes(bytes, decimals = 2) {
+    if (!+bytes) return '0 Bytes'
 
-	mediaUrls.push({title: title, url: url});
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+
+const ProcessMediaUrl = (title, url, contentLength) => {
+	console.log(`Title: ${title} - URL: ${url}`);
+	if (contentLength.length == 1) {
+		const size = contentLength[0].value;
+		mediaUrls.push({title: title, url: url, size: formatBytes(size)});
+	} else {
+		mediaUrls.push({title: title, url: url, size: 0});
+	}
 	browserAction.setBadgeText({text: `${mediaUrls.length}`});
 };
 
 const OnResponseStarted = (details) => {
 	if (details.type !== "media") return;
 
+	const contentLength = details.responseHeaders.filter(header => header.name === "Content-Length");
+
 	tabs.executeScript(
 		details.tabId,
 		{code: `document.title`}
 	).then(results => {
-		ProcessMediaUrl(results[0], details.url);
+		ProcessMediaUrl(results[0], details.url, contentLength);
 	});
 };
 

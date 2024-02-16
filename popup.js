@@ -8,16 +8,16 @@ const DeleteURLByIndex = (index) => {
 	}, error => {});
 };
 
-const CreateTableRow = (index, value) => {
+const CreateTableRow = (index, content) => {
 	let newRow = tableBody.insertRow(-1);
 
-	let indexCell = newRow.insertCell(0);
-	let indexText = document.createTextNode(`${index}`);
-	indexCell.appendChild(indexText);
-
-	let titleCell = newRow.insertCell(1);
-	let titleText = document.createTextNode(value);
+	let titleCell = newRow.insertCell(0);
+	let titleText = document.createTextNode(content.title);
 	titleCell.appendChild(titleText);
+
+	let sizeCell = newRow.insertCell(1);
+	let sizeText = document.createTextNode(content.size);
+	sizeCell.appendChild(sizeText);
 
 	let delCell = newRow.insertCell(2);
 	let delBtn = document.createElement("button");
@@ -59,13 +59,12 @@ const RefreshMediaTable = () => {
 	{
 		let mediaUrls = JSON.parse(serializedMediaUrls);
 		console.log(mediaUrls);
-		let mediaTitles = mediaUrls.map(mediaUrl => mediaUrl.title);
 
 		tableBody.innerHTML = '';
 		exportBtn.onclick = null;
 		clearBtn.onclick = null;
 
-		mediaTitles.forEach((value, index, array) => {
+		mediaUrls.forEach((value, index, array) => {
 			CreateTableRow(index, value);
 		});
 		exportBtn.onclick = () => { ExportBtnOnClick(mediaUrls); };
