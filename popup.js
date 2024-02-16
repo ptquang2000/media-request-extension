@@ -29,7 +29,7 @@ const CreateTableRow = (index, value) => {
 const GenerateAria2Input = (mediaUrls) => {
 	const fileExt = ".mp4";
 	const aria2Ext = ".aria2";
-	const fileNameMaxLen = 256 - fileExt.length - aria2Ext.length;
+	const fileNameMaxLen = 255 - fileExt.length - aria2Ext.length;
 	const maxConnectionPerServer = 4;
 
 	let output = "";
