@@ -27,14 +27,19 @@ webRequest.onResponseStarted.addListener(
 );
 
 const HandleMessage = (request, sender, sendResponse) => {
-	console.log(`handle msg ${request}`);
-	if (request === GET_MEDIA_TITLES)
+	console.log(`handle msg ${request.type}`);
+	if (request.type === GET_MEDIA_TITLES)
 	{
 		sendResponse(JSON.stringify(mediaUrls));
 	}
-	else if (request === CLEAR_ALL_URLS)
+	else if (request.type === CLEAR_ALL_URLS)
 	{
 		mediaUrls.length = 0;
+		browserAction.setBadgeText({text: `${mediaUrls.length}`});
+	}
+	else if (request.type === DELETE_URL_AT_INDEX)
+	{
+		mediaUrls.splice(request.index, 1);
 		browserAction.setBadgeText({text: `${mediaUrls.length}`});
 	}
 };
