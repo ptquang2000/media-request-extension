@@ -27,16 +27,15 @@ const CreateTableRow = (index, content) => {
 }
 
 const GenerateAria2Input = (mediaUrls) => {
-	const fileExt = ".mp4";
 	const aria2Ext = ".aria2";
-	const fileNameMaxLen = 255 - fileExt.length - aria2Ext.length;
+	const fileNameMaxLen = 200 - aria2Ext.length;
 	const maxConnectionPerServer = 4;
 
 	let output = "";
 	mediaUrls.forEach(mediaUrl => {
 		fileName = mediaUrl.title.replace(/[/\0]/g, '').substring(0, fileNameMaxLen);
 		output += `${mediaUrl.url}\n`;
-		output += `\tout=${fileName}${fileExt}\n`;
+		output += `\tout=${fileName}\n`;
 		output += `\tmax-connection-per-server=${maxConnectionPerServer}\n`;
 	});
 	return output;
