@@ -57,6 +57,7 @@ const RefreshMediaTable = () => {
 	runtime.sendMessage({type: GET_MEDIA_TITLES}).then(serializedMediaUrls => 
 	{
 		let mediaUrls = JSON.parse(serializedMediaUrls);
+		mediaUrls.reverse();
 		console.log(mediaUrls);
 
 		tableBody.innerHTML = '';
