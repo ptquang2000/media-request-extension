@@ -29,7 +29,9 @@ const CreateTableRow = (index, content) => {
 const GenerateAria2Input = (mediaUrls) => {
 	const aria2Ext = ".aria2";
 	const fileNameMaxLen = 200 - aria2Ext.length;
-	const maxConnectionPerServer = 4;
+	const maxConnectionPerServer = 16;
+	const split = 16;
+	const maxConcurrentDownloads = 3;
 
 	let output = "";
 	mediaUrls.forEach(mediaUrl => {
@@ -37,6 +39,8 @@ const GenerateAria2Input = (mediaUrls) => {
 		output += `${mediaUrl.url}\n`;
 		output += `\tout=${fileName}\n`;
 		output += `\tmax-connection-per-server=${maxConnectionPerServer}\n`;
+		output += `\tsplit=${split}\n`;
+		output += `\tmax-concurrent-downloads=${maxConcurrentDownloads}\n`;
 	});
 	return output;
 };
