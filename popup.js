@@ -35,7 +35,7 @@ const GenerateAria2Input = (mediaUrls) => {
 
 	let output = "";
 	mediaUrls.forEach(mediaUrl => {
-		fileName = mediaUrl.title.replace(/[/\0]/g, '').substring(0, fileNameMaxLen);
+		fileName = mediaUrl.title.replace(/[!/\0]/g, '').substring(0, fileNameMaxLen);
 		output += `${mediaUrl.url}\n`;
 		output += `\tout=${fileName}.mp4\n`;
 		output += `\tmax-connection-per-server=${maxConnectionPerServer}\n`;
