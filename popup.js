@@ -2,8 +2,8 @@ const tableBody = document.getElementById("tbody-id");
 const exportBtn = document.getElementById("btn-export");
 const clearBtn = document.getElementById("btn-clear");
 
-const DeleteURLByIndex = (index) => {
-	runtime.sendMessage({type: DELETE_URL_AT_INDEX, index: index}).then(() => {
+const DeleteURLByCriteria = (url, size) => {
+	runtime.sendMessage({type: DELETE_URL_AT_INDEX, url: url, size: size}).then(() => {
 		RefreshMediaTable();
 	}, error => {});
 };
@@ -21,7 +21,7 @@ const CreateTableRow = (index, content) => {
 
 	let delCell = newRow.insertCell(2);
 	let delBtn = document.createElement("button");
-	delBtn.onclick = () => { DeleteURLByIndex(index); };
+	delBtn.onclick = () => { DeleteURLByCriteria(content.url, content.size); };
 	delBtn.textContent = "Del";
 	delCell.appendChild(delBtn);
 }
@@ -67,7 +67,7 @@ const RefreshMediaTable = () => {
 		exportBtn.onclick = null;
 		clearBtn.onclick = null;
 
-		mediaUrls.forEach((value, index, array) => {
+		[...mediaUrls].reverse().forEach((value, index, array) => {
 			CreateTableRow(index, value);
 		});
 		exportBtn.onclick = () => { ExportBtnOnClick(mediaUrls); };
