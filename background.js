@@ -86,9 +86,15 @@ function resolveMediaTitle(url, headers, pageTitle) {
     return pageTitle || url;
 }
 
-const ProcessMediaUrl = (title, url, contentLength) => {
+function fetchContentLengthViaHead(url) {
+	return fetch(url, { method: 'HEAD' }).then(response => {
+		const length = response.headers.get('Content-Length');
+		return length ? parseInt(length, 10) : null;
+	}).catch(() => null);
+}
+
+const ProcessMediaUrl = (title, url, size) => {
 	console.log(`Title: ${title} - URL: ${url}`);
-	const size = contentLength.length == 1 ? formatBytes(contentLength[0].value) : 0;
 
 	const existingIndex = mediaUrls.findIndex(item => item.url === url && item.size === size);
 	if (existingIndex !== -1) {
@@ -141,12 +147,16 @@ const OnResponseStarted = (details) => {
 
 	const contentLength = details.responseHeaders.filter(h => h.name === "Content-Length");
 
-	extractTitleWithRetry(details.tabId, 0).then(pageTitle => {
-		const title = resolveMediaTitle(details.url, details.responseHeaders, pageTitle);
-		ProcessMediaUrl(title, details.url, contentLength);
-	}).catch(() => {
-		const title = resolveMediaTitle(details.url, details.responseHeaders, null);
-		ProcessMediaUrl(title, details.url, contentLength);
+	const resolveSize = contentLength.length == 1
+		? Promise.resolve(formatBytes(contentLength[0].value))
+		: fetchContentLengthViaHead(details.url).then(bytes => bytes ? formatBytes(bytes) : 'Unknown');
+
+	const resolveTitle = extractTitleWithRetry(details.tabId, 0)
+		.then(pageTitle => resolveMediaTitle(details.url, details.responseHeaders, pageTitle))
+		.catch(() => resolveMediaTitle(details.url, details.responseHeaders, null));
+
+	Promise.all([resolveTitle, resolveSize]).then(([title, size]) => {
+		ProcessMediaUrl(title, details.url, size);
 	});
 };
 
