@@ -12,7 +12,9 @@
 	"permissions": [
 		"tabs", 
 		"webRequest", 
-		"<all_urls>"
+		"<all_urls>",
+		"storage",
+		"unlimitedStorage"
 	],
 
 	"browser_action": {

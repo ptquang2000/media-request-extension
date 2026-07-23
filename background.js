@@ -1,6 +1,21 @@
 const webRequest = browser.webRequest;
 const browserAction = browser.browserAction;
+const storage = browser.storage.local;
 const mediaUrls = [];
+
+function loadFromStorage() {
+	return storage.get("mediaUrls").then(result => {
+		if (result.mediaUrls && Array.isArray(result.mediaUrls)) {
+			mediaUrls.length = 0;
+			mediaUrls.push(...result.mediaUrls);
+		}
+		browserAction.setBadgeText({text: `${mediaUrls.length}`});
+	});
+}
+
+function saveToStorage() {
+	return storage.set({ mediaUrls: [...mediaUrls] });
+}
 
 function formatBytes(bytes, decimals = 2) {
     if (!+bytes) return '0 Bytes'
@@ -16,13 +31,16 @@ function formatBytes(bytes, decimals = 2) {
 
 const ProcessMediaUrl = (title, url, contentLength) => {
 	console.log(`Title: ${title} - URL: ${url}`);
-	if (contentLength.length == 1) {
-		const size = contentLength[0].value;
-		mediaUrls.push({title: title, url: url, size: formatBytes(size)});
-	} else {
-		mediaUrls.push({title: title, url: url, size: 0});
+	const size = contentLength.length == 1 ? formatBytes(contentLength[0].value) : 0;
+
+	const existingIndex = mediaUrls.findIndex(item => item.url === url && item.size === size);
+	if (existingIndex !== -1) {
+		mediaUrls.splice(existingIndex, 1);
 	}
+
+	mediaUrls.push({title, url, size});
 	browserAction.setBadgeText({text: `${mediaUrls.length}`});
+	saveToStorage();
 };
 
 const OnResponseStarted = (details) => {
@@ -54,12 +72,16 @@ const HandleMessage = (request, sender, sendResponse) => {
 	{
 		mediaUrls.length = 0;
 		browserAction.setBadgeText({text: `${mediaUrls.length}`});
+		saveToStorage();
 	}
 	else if (request.type === DELETE_URL_AT_INDEX)
 	{
 		mediaUrls.splice(request.index, 1);
 		browserAction.setBadgeText({text: `${mediaUrls.length}`});
+		saveToStorage();
 	}
 };
 
 runtime.onMessage.addListener(HandleMessage);
+
+loadFromStorage();
