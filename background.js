@@ -108,12 +108,12 @@ const ProcessMediaUrl = (title, url, size) => {
 
 const TITLE_SCRIPT = `
 	(function() {
+		var h1 = document.querySelector('h1');
+		if (h1 && h1.textContent.trim()) return h1.textContent.trim();
 		var meta = document.querySelector('meta[property="og:title"]');
 		if (meta && meta.content) return meta.content;
 		meta = document.querySelector('meta[name="og:title"]');
 		if (meta && meta.content) return meta.content;
-		var h1 = document.querySelector('h1');
-		if (h1 && h1.textContent.trim()) return h1.textContent.trim();
 		return document.title;
 	})()
 `;
