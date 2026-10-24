@@ -27,17 +27,77 @@ const CreateTableRow = (index, content) => {
 }
 
 const GenerateAria2Input = (mediaUrls) => {
-	const aria2Ext = ".mp4.aria2";
-	const fileNameMaxLen = 128 + aria2Ext.length;
 	const maxConnectionPerServer = 16;
 	const split = 8;
 	const maxConcurrentDownloads = 5;
+	const finalExtension = ".mp4";
+
+	const detectPlatform = () => {
+		const platform = navigator.platform || navigator.userAgent || '';
+		if (/win/i.test(platform)) return 'windows';
+		if (/linux/i.test(platform)) return 'linux';
+		if (/mac/i.test(platform)) return 'macos';
+		return 'linux';
+	};
+
+	const getMaxFilenameLength = (platform) => {
+		if (platform === 'windows') {
+			// Windows supports long paths (up to ~32767 with long path enabled)
+			return 260;
+		} else if (platform === 'linux') {
+			// Linux NAME_MAX is typically 255 bytes for most filesystems
+			return 255;
+		} else if (platform === 'macos') {
+			// macOS HFS+ is 255 UTF-16 units, APFS similar
+			return 255;
+		}
+		return 255;
+	};
+
+	const normalizeFilename = (name) => {
+		if (!name) return "download";
+		const platform = detectPlatform();
+		let normalized = name;
+
+		if (platform === 'windows') {
+			// Windows invalid chars: \ / : * ? " < > |
+			normalized = normalized.replace(/[\\/:*?"<>|]/g, ' ');
+			// Avoid reserved names
+			const reserved = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+			const trimmed = normalized.trim();
+			if (reserved.test(trimmed)) {
+				normalized = '_' + trimmed;
+			} else {
+				normalized = trimmed;
+			}
+		} else if (platform === 'linux') {
+			// Linux invalid char is only / (and null)
+			normalized = normalized.replace(/\//g, ' ');
+		} else if (platform === 'macos') {
+			// macOS invalid chars: : and /
+			normalized = normalized.replace(/[/:]/g, ' ');
+		}
+
+		// Common: remove control chars and null
+		normalized = normalized.replace(/[\x00-\x1f\x7f\0]/g, ' ');
+		normalized = normalized.replace(/\s+/g, ' ').trim();
+		return normalized || "download";
+	};
 
 	let output = "";
+	const platform = detectPlatform();
+	const maxLen = getMaxFilenameLength(platform);
+
 	mediaUrls.forEach(mediaUrl => {
-		fileName = mediaUrl.title.replace(/[!/\0]/g, '').substring(0, fileNameMaxLen);
+		let fileName = normalizeFilename(mediaUrl.title);
+		// Account for final extension length
+		if (fileName.length + finalExtension.length > maxLen) {
+			fileName = fileName.substring(0, maxLen - finalExtension.length);
+		}
+		fileName = fileName.trim();
+		if (!fileName) fileName = "download";
 		output += `${mediaUrl.url}\n`;
-		output += `\tout=${fileName}.mp4\n`;
+		output += `\tout=${fileName}${finalExtension}\n`;
 		output += `\tmax-connection-per-server=${maxConnectionPerServer}\n`;
 		output += `\tsplit=${split}\n`;
 		output += `\tmax-concurrent-downloads=${maxConcurrentDownloads}\n`;
