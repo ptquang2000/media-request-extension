@@ -41,16 +41,6 @@ const GenerateAria2Input = (mediaUrls) => {
 	};
 
 	const getMaxFilenameLength = (platform) => {
-		if (platform === 'windows') {
-			// Windows supports long paths (up to ~32767 with long path enabled)
-			return 260;
-		} else if (platform === 'linux') {
-			// Linux NAME_MAX is typically 255 bytes for most filesystems
-			return 255;
-		} else if (platform === 'macos') {
-			// macOS HFS+ is 255 UTF-16 units, APFS similar
-			return 255;
-		}
 		return 255;
 	};
 
