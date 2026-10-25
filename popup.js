@@ -41,6 +41,9 @@ const GenerateAria2Input = (mediaUrls) => {
 	};
 
 	const getMaxFilenameLength = (platform) => {
+		if (platform === 'windows') {
+			return 230;
+		}
 		return 255;
 	};
 
