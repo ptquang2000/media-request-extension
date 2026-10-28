@@ -14,7 +14,8 @@
 		"webRequest", 
 		"<all_urls>",
 		"storage",
-		"unlimitedStorage"
+		"unlimitedStorage",
+		"downloads"
 	],
 
 	"browser_action": {

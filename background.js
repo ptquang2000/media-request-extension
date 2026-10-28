@@ -1,6 +1,7 @@
 const webRequest = browser.webRequest;
 const browserAction = browser.browserAction;
 const storage = browser.storage.local;
+const downloads = browser.downloads;
 const mediaUrls = [];
 
 function loadFromStorage() {
@@ -177,6 +178,23 @@ const HandleMessage = (request, sender, sendResponse) => {
 		mediaUrls.length = 0;
 		browserAction.setBadgeText({text: `${mediaUrls.length}`});
 		saveToStorage();
+	}
+	else if (request.type === EXPORT_ARIA2_INPUT)
+	{
+		// Save the aria2c input file into the browser's download folder.
+		// Run "aria2c -i aria2-input.txt" from that folder afterwards; aria2c
+		// resolves relative paths, so the media files land in the same location.
+		const inputBlob = new Blob([request.data], {type: "text/plain;charset=utf-8"});
+		const objectUrl = URL.createObjectURL(inputBlob);
+		downloads.download({
+			url: objectUrl,
+			filename: request.filename,
+			conflictAction: "uniquify"
+		}).then(() => {
+			URL.revokeObjectURL(objectUrl);
+		}, (error) => {
+			console.warn(`Failed to export ${request.filename}: ${error}`);
+		});
 	}
 	else if (request.type === DELETE_URL_AT_INDEX)
 	{

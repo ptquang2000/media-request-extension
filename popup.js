@@ -40,11 +40,23 @@ const GenerateAria2Input = (mediaUrls) => {
 		return 'linux';
 	};
 
-	const getMaxFilenameLength = (platform) => {
+	// Per-OS filesystem limits that apply to the exported out= names.
+	// The input file has no dir= entry: aria2c is run from the browser download
+	// folder with only one filename component written per media item, so both a
+	// total-path cap (Windows MAX_PATH) and a component cap (255 on all OSes) matter.
+	const getPathLimits = (platform) => {
 		if (platform === 'windows') {
-			return 230;
+			return {
+				// NTFS caps each path component (the out= file itself) at 255 chars.
+				maxFilenameLength: 255,
+				// aria2c is not long-path aware, so MAX_PATH (260) still applies: the
+				// download folder, e.g. C:\Users\<user>\Downloads, consumes part of it.
+				// Reserve 30 chars for that folder and budget the rest for the name.
+				maxPathLength: 260 - 30
+			};
 		}
-		return 255;
+		// Linux (ext4) and macOS (APFS/HFS+): no practical total-path limit.
+		return { maxFilenameLength: 255, maxPathLength: null };
 	};
 
 	const normalizeFilename = (name) => {
@@ -79,13 +91,18 @@ const GenerateAria2Input = (mediaUrls) => {
 
 	let output = "";
 	const platform = detectPlatform();
-	const maxLen = getMaxFilenameLength(platform);
+	const limits = getPathLimits(platform);
+	// Longest usable name before the final extension is appended
+	let maxNameLength = limits.maxFilenameLength - finalExtension.length;
+	if (limits.maxPathLength !== null) {
+		maxNameLength = Math.min(maxNameLength, limits.maxPathLength - finalExtension.length);
+	}
 
 	mediaUrls.forEach(mediaUrl => {
 		let fileName = normalizeFilename(mediaUrl.title);
 		// Account for final extension length
-		if (fileName.length + finalExtension.length > maxLen) {
-			fileName = fileName.substring(0, maxLen - finalExtension.length);
+		if (fileName.length > maxNameLength) {
+			fileName = fileName.substring(0, maxNameLength);
 		}
 		fileName = fileName.trim();
 		if (!fileName) fileName = "download";
@@ -99,9 +116,11 @@ const GenerateAria2Input = (mediaUrls) => {
 };
 
 const ExportBtnOnClick = (mediaUrls) => {
-	const blob = new Blob([`${GenerateAria2Input(mediaUrls)}`], { type: "text/plain;charset=utf-8" });
-	const url = URL.createObjectURL(blob);
-	window.open(url);
+	runtime.sendMessage({
+		type: EXPORT_ARIA2_INPUT,
+		filename: ARIA2_INPUT_FILENAME,
+		data: GenerateAria2Input(mediaUrls)
+	});
 };
 
 const ClearBtnOnClick = () => {
