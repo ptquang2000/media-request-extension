@@ -116,11 +116,26 @@ const GenerateAria2Input = (mediaUrls) => {
 };
 
 const ExportBtnOnClick = (mediaUrls) => {
-	runtime.sendMessage({
-		type: EXPORT_ARIA2_INPUT,
-		filename: ARIA2_INPUT_FILENAME,
-		data: GenerateAria2Input(mediaUrls)
-	});
+	if (!mediaUrls || mediaUrls.length === 0) {
+		alert("No media URLs to export.");
+		return;
+	}
+
+	// Download via an <a download> anchor in the popup instead of
+	// browser.downloads.download(): the downloads API silently fails with
+	// blob: URLs on recent Firefox builds, while anchor downloads work.
+	const input = GenerateAria2Input(mediaUrls);
+	const blob = new Blob([input], {type: "text/plain;charset=utf-8"});
+	const objectUrl = URL.createObjectURL(blob);
+
+	const anchor = document.createElement("a");
+	anchor.href = objectUrl;
+	anchor.download = ARIA2_INPUT_FILENAME;
+	document.body.appendChild(anchor);
+	anchor.click();
+	anchor.remove();
+	// Do not revoke the object URL before the download has read the blob;
+	// the popup page teardown frees it automatically.
 };
 
 const ClearBtnOnClick = () => {

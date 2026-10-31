@@ -1,7 +1,6 @@
 const webRequest = browser.webRequest;
 const browserAction = browser.browserAction;
 const storage = browser.storage.local;
-const downloads = browser.downloads;
 const mediaUrls = [];
 
 function loadFromStorage() {
@@ -167,21 +166,9 @@ webRequest.onResponseStarted.addListener(
 	["responseHeaders"],
 );
 
-// Blob URLs must stay alive until the download has completed; revoking them
-// as soon as download() resolves breaks the download (the promise resolves
-// before the download manager has read the blob). Track per download ID and
-// revoke in the onChanged handler once the state is "complete".
-const pendingBlobUrls = new Map();
-
-downloads.onChanged.addListener(delta => {
-	if (delta.state && delta.state.current === "complete") {
-		const objectUrl = pendingBlobUrls.get(delta.id);
-		if (objectUrl) {
-			pendingBlobUrls.delete(delta.id);
-			URL.revokeObjectURL(objectUrl);
-		}
-	}
-});
+// Note: exporting no longer uses browser.downloads.download() — the downloads
+// API silently fails with blob: URLs on recent Firefox builds. The popup now
+// triggers the download itself via an <a download> anchor (see popup.js).
 
 const HandleMessage = (request, sender, sendResponse) => {
 	console.log(`handle msg ${request.type}`);
@@ -197,21 +184,9 @@ const HandleMessage = (request, sender, sendResponse) => {
 	}
 	else if (request.type === EXPORT_ARIA2_INPUT)
 	{
-		// Save the aria2c input file into the browser's download folder.
-		// Run "aria2c -i aria2-input.txt" from that folder afterwards; aria2c
-		// resolves relative paths, so the media files land in the same location.
-		const inputBlob = new Blob([request.data], {type: "text/plain;charset=utf-8"});
-		const objectUrl = URL.createObjectURL(inputBlob);
-		downloads.download({
-			url: objectUrl,
-			filename: request.filename,
-			conflictAction: "uniquify"
-		}).then((downloadId) => {
-			pendingBlobUrls.set(downloadId, objectUrl);
-		}, (error) => {
-			URL.revokeObjectURL(objectUrl);
-			console.warn(`Failed to export ${request.filename}: ${error}`);
-		});
+		// Exports are handled entirely by the popup via an <a download> anchor;
+		// nothing to do here.
+		sendResponse(true);
 	}
 	else if (request.type === DELETE_URL_AT_INDEX)
 	{
