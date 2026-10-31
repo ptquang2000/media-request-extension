@@ -1,6 +1,8 @@
 const webRequest = browser.webRequest;
 const browserAction = browser.browserAction;
 const storage = browser.storage.local;
+const downloads = browser.downloads;
+const notifications = browser.notifications;
 const mediaUrls = [];
 
 function loadFromStorage() {
@@ -166,9 +168,28 @@ webRequest.onResponseStarted.addListener(
 	["responseHeaders"],
 );
 
-// Note: exporting no longer uses browser.downloads.download() — the downloads
-// API silently fails with blob: URLs on recent Firefox builds. The popup now
-// triggers the download itself via an <a download> anchor (see popup.js).
+// Blob URLs passed to browser.downloads.download() must stay alive until the
+// download has completed; revoking them as soon as download() resolves breaks
+// the download (the promise resolves before the download manager has read the
+// blob). Track per download ID and revoke once the state is complete, also
+// signaling that the export has been saved.
+const pendingExportDownloads = new Map();
+
+downloads.onChanged.addListener(delta => {
+	const objectUrl = pendingExportDownloads.get(delta.id);
+	if (!objectUrl) return;
+	if (delta.state && (delta.state.current === "complete" || delta.state.current === "interrupted")) {
+		pendingExportDownloads.delete(delta.id);
+		URL.revokeObjectURL(objectUrl);
+		if (delta.state.current === "complete") {
+			notifications.create({
+				type: "basic",
+				title: "Media Request",
+				message: `Export saved. Run "aria2c -i ${ARIA2_INPUT_FILENAME}" from the folder you chose.`
+			});
+		}
+	}
+});
 
 const HandleMessage = (request, sender, sendResponse) => {
 	console.log(`handle msg ${request.type}`);
@@ -184,8 +205,23 @@ const HandleMessage = (request, sender, sendResponse) => {
 	}
 	else if (request.type === EXPORT_ARIA2_INPUT)
 	{
-		// Exports are handled entirely by the popup via an <a download> anchor;
-		// nothing to do here.
+		// Save the aria2c input file with a Save As file picker (saveAs: true)
+		// so the user chooses the folder. Run "aria2c -i aria2-input.txt" from
+		// that folder afterwards; aria2c resolves relative paths, so the media
+		// files land in the same location.
+		const inputBlob = new Blob([request.data], {type: "text/plain;charset=utf-8"});
+		const objectUrl = URL.createObjectURL(inputBlob);
+		downloads.download({
+			url: objectUrl,
+			filename: request.filename,
+			saveAs: true,
+			conflictAction: "uniquify"
+		}).then((downloadId) => {
+			pendingExportDownloads.set(downloadId, objectUrl);
+		}, (error) => {
+			URL.revokeObjectURL(objectUrl);
+			console.warn(`Failed to export ${request.filename}: ${error}`);
+		});
 		sendResponse(true);
 	}
 	else if (request.type === DELETE_URL_AT_INDEX)

@@ -7,16 +7,6 @@ const SetExportStatus = (message) => {
 	if (exportStatus) exportStatus.textContent = message;
 };
 
-const NotifyExportSaved = () => {
-	if (browser && browser.notifications && browser.notifications.create) {
-		browser.notifications.create({
-			type: "basic",
-			title: "Media Request",
-			message: `${ARIA2_INPUT_FILENAME} saved to your Downloads folder. Run "aria2c -i ${ARIA2_INPUT_FILENAME}" there.`
-		});
-	}
-};
-
 const DeleteURLByCriteria = (url, size) => {
 	runtime.sendMessage({type: DELETE_URL_AT_INDEX, url: url, size: size}).then(() => {
 		RefreshMediaTable();
@@ -136,24 +126,15 @@ const ExportBtnOnClick = (mediaUrls) => {
 		return;
 	}
 
-	// Download via an <a download> anchor in the popup instead of
-	// browser.downloads.download(): the downloads API silently fails with
-	// blob: URLs on recent Firefox builds, while anchor downloads work.
-	const input = GenerateAria2Input(mediaUrls);
-	const blob = new Blob([input], {type: "text/plain;charset=utf-8"});
-	const objectUrl = URL.createObjectURL(blob);
-
-	const anchor = document.createElement("a");
-	anchor.href = objectUrl;
-	anchor.download = ARIA2_INPUT_FILENAME;
-	document.body.appendChild(anchor);
-	anchor.click();
-	anchor.remove();
-	// Do not revoke the object URL before the download has read the blob;
-	// the popup page teardown frees it automatically.
-
-	SetExportStatus(`Exported to your Downloads folder as ${ARIA2_INPUT_FILENAME}.`);
-	NotifyExportSaved();
+	// Export goes through the background script so browser.downloads.download()
+	// can open the Save As file picker (saveAs: true). The blob URL is kept
+	// alive there until the download completes, which is required on Firefox.
+	runtime.sendMessage({
+		type: EXPORT_ARIA2_INPUT,
+		filename: ARIA2_INPUT_FILENAME,
+		data: GenerateAria2Input(mediaUrls)
+	});
+	SetExportStatus("Choose a save location in the file picker.");
 };
 
 const ClearBtnOnClick = () => {
