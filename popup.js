@@ -1,6 +1,21 @@
 const tableBody = document.getElementById("tbody-id");
 const exportBtn = document.getElementById("btn-export");
 const clearBtn = document.getElementById("btn-clear");
+const exportStatus = document.getElementById("export-status");
+
+const SetExportStatus = (message) => {
+	if (exportStatus) exportStatus.textContent = message;
+};
+
+const NotifyExportSaved = () => {
+	if (browser && browser.notifications && browser.notifications.create) {
+		browser.notifications.create({
+			type: "basic",
+			title: "Media Request",
+			message: `${ARIA2_INPUT_FILENAME} saved to your Downloads folder. Run "aria2c -i ${ARIA2_INPUT_FILENAME}" there.`
+		});
+	}
+};
 
 const DeleteURLByCriteria = (url, size) => {
 	runtime.sendMessage({type: DELETE_URL_AT_INDEX, url: url, size: size}).then(() => {
@@ -117,7 +132,7 @@ const GenerateAria2Input = (mediaUrls) => {
 
 const ExportBtnOnClick = (mediaUrls) => {
 	if (!mediaUrls || mediaUrls.length === 0) {
-		alert("No media URLs to export.");
+		SetExportStatus("No media URLs to export.");
 		return;
 	}
 
@@ -136,6 +151,9 @@ const ExportBtnOnClick = (mediaUrls) => {
 	anchor.remove();
 	// Do not revoke the object URL before the download has read the blob;
 	// the popup page teardown frees it automatically.
+
+	SetExportStatus(`Exported to your Downloads folder as ${ARIA2_INPUT_FILENAME}.`);
+	NotifyExportSaved();
 };
 
 const ClearBtnOnClick = () => {
