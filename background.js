@@ -167,6 +167,22 @@ webRequest.onResponseStarted.addListener(
 	["responseHeaders"],
 );
 
+// Blob URLs must stay alive until the download has completed; revoking them
+// as soon as download() resolves breaks the download (the promise resolves
+// before the download manager has read the blob). Track per download ID and
+// revoke in the onChanged handler once the state is "complete".
+const pendingBlobUrls = new Map();
+
+downloads.onChanged.addListener(delta => {
+	if (delta.state && delta.state.current === "complete") {
+		const objectUrl = pendingBlobUrls.get(delta.id);
+		if (objectUrl) {
+			pendingBlobUrls.delete(delta.id);
+			URL.revokeObjectURL(objectUrl);
+		}
+	}
+});
+
 const HandleMessage = (request, sender, sendResponse) => {
 	console.log(`handle msg ${request.type}`);
 	if (request.type === GET_MEDIA_TITLES)
@@ -190,9 +206,10 @@ const HandleMessage = (request, sender, sendResponse) => {
 			url: objectUrl,
 			filename: request.filename,
 			conflictAction: "uniquify"
-		}).then(() => {
-			URL.revokeObjectURL(objectUrl);
+		}).then((downloadId) => {
+			pendingBlobUrls.set(downloadId, objectUrl);
 		}, (error) => {
+			URL.revokeObjectURL(objectUrl);
 			console.warn(`Failed to export ${request.filename}: ${error}`);
 		});
 	}
