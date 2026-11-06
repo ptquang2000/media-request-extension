@@ -57,7 +57,10 @@ const GenerateAria2Input = (mediaUrls) => {
 				// aria2c is not long-path aware, so MAX_PATH (260) still applies: the
 				// download folder, e.g. C:\Users\<user>\Downloads, consumes part of it.
 				// Reserve 30 chars for that folder and budget the rest for the name.
-				maxPathLength: 260 - 30
+				// aria2c writes its progress/control file as <out>.aria2, appending
+				// 6 chars to the already-budgeted ".mp4" name, so that longer path
+				// must also fit MAX_PATH or the segment-file write fails mid-download.
+				maxPathLength: 260 - 30 - ARIA2_CONTROL_SUFFIX.length
 			};
 		}
 		// Linux (ext4) and macOS (APFS/HFS+): no practical total-path limit.

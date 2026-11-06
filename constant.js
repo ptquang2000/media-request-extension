@@ -6,3 +6,6 @@ const CLEAR_ALL_URLS = "CLEAR_ALL_URLS";
 const EXPORT_ARIA2_INPUT = "EXPORT_ARIA2_INPUT";
 const DELETE_URL_AT_INDEX = "DELETE_URL_AT_INDEX";
 const ARIA2_INPUT_FILENAME = "aria2-input.txt";
+// aria2c appends this to the out= filename for its progress/control file,
+// which must also fit Windows MAX_PATH when sizing exported names.
+const ARIA2_CONTROL_SUFFIX = ".aria2";
